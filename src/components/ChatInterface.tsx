@@ -122,23 +122,23 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onComplete }) => {
 
     switch (currentStepData.type) {
       case 'instagram':
-        return (
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => handleSubmit(true)} 
-              variant="default"
-              className="flex items-center gap-2 gradient-romantic text-white border-0 shadow-romantic"
-            >
-              <Instagram className="w-4 h-4" />
-              Connect Instagram
-            </Button>
-          </div>
-        );
+         return (
+           <div className="flex gap-3">
+             <Button 
+               onClick={() => handleSubmit(true)} 
+               variant="default"
+               className="flex items-center gap-2 gradient-romantic text-white border-0 shadow-romantic rounded-full px-6 py-3 hover:shadow-lg transition-all duration-200"
+             >
+               <Instagram className="w-5 h-5" />
+               Connect Instagram
+             </Button>
+           </div>
+         );
 
       case 'text':
       case 'number':
         return (
-          <div className="flex gap-2">
+          <div className="flex gap-3 items-end">
             <Input
               value={currentInput}
               onChange={(e) => setCurrentInput(e.target.value)}
@@ -149,36 +149,38 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onComplete }) => {
                   handleSubmit(currentInput.trim());
                 }
               }}
-              className="border-romantic/20 focus:ring-romantic"
+              className="flex-1 rounded-full border-border/50 focus:border-romantic focus:ring-romantic/20 bg-background/50 backdrop-blur-sm"
             />
             <Button 
               onClick={() => currentInput.trim() && handleSubmit(currentInput.trim())}
               disabled={!currentInput.trim()}
               variant="default"
-              className="gradient-romantic text-white border-0"
+              className="gradient-romantic text-white border-0 rounded-full w-12 h-12 p-0 shadow-romantic hover:shadow-lg transition-all duration-200"
             >
-              Send
+              <div className="w-5 h-5 rounded-full border-2 border-white flex items-center justify-center">
+                <div className="w-2 h-2 bg-white rounded-full"></div>
+              </div>
             </Button>
           </div>
         );
 
       case 'textarea':
         return (
-          <div className="space-y-2">
+          <div className="space-y-3">
             <Textarea
               value={currentInput}
               onChange={(e) => setCurrentInput(e.target.value)}
               placeholder="Tell me more..."
-              className="border-romantic/20 focus:ring-romantic"
+              className="rounded-2xl border-border/50 focus:border-romantic focus:ring-romantic/20 bg-background/50 backdrop-blur-sm resize-none"
               rows={3}
             />
             <Button 
               onClick={() => currentInput.trim() && handleSubmit(currentInput.trim())}
               disabled={!currentInput.trim()}
               variant="default"
-              className="gradient-romantic text-white border-0"
+              className="gradient-romantic text-white border-0 rounded-full px-6 py-3 hover:shadow-lg transition-all duration-200"
             >
-              Send
+              Send Message
             </Button>
           </div>
         );
@@ -224,50 +226,65 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onComplete }) => {
   };
 
   return (
-    <div className="min-h-screen gradient-soft flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl h-[80vh] flex flex-col shadow-soft backdrop-blur-sm bg-background/95 border-romantic/20">
-        {/* Header */}
-        <div className="flex items-center justify-center p-6 border-b border-romantic/10">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background/95 to-romantic/5 flex flex-col">
+      {/* Modern Header */}
+      <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-xl border-b border-border/50">
+        <div className="flex items-center justify-between px-6 py-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 gradient-romantic rounded-full flex items-center justify-center shadow-romantic">
-              <Heart className="w-5 h-5 text-white" />
+            <div className="relative">
+              <div className="w-10 h-10 gradient-romantic rounded-full flex items-center justify-center shadow-lg">
+                <Heart className="w-5 h-5 text-white" />
+              </div>
+              <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 rounded-full border-2 border-background"></div>
             </div>
             <div>
-              <h2 className="text-xl font-semibold bg-gradient-to-r from-romantic to-romantic-variant bg-clip-text text-transparent">
-                LoveSync AI
-              </h2>
-              <p className="text-sm text-muted-foreground">Your AI Matchmaker</p>
+              <h1 className="text-lg font-semibold text-foreground">LoveSync AI</h1>
+              <p className="text-xs text-muted-foreground">Online • Ready to help</p>
             </div>
           </div>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-romantic rounded-full animate-pulse"></div>
+            <span className="text-xs text-muted-foreground">AI Matchmaker</span>
+          </div>
         </div>
+      </div>
 
-        <div className="flex-1 p-6 overflow-y-auto space-y-6">
-          {messages.map((message) => (
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-4">
+        <div className="max-w-4xl mx-auto space-y-6">
+          {messages.map((message, index) => (
             <div
               key={message.id}
-              className={`flex items-start gap-3 ${message.isBot ? 'justify-start' : 'justify-end'}`}
+              className={`flex items-end gap-2 animate-fade-in ${
+                message.isBot ? 'justify-start' : 'justify-end'
+              }`}
+              style={{ animationDelay: `${index * 0.1}s` }}
             >
               {message.isBot && (
-                <div className="w-8 h-8 gradient-romantic rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                <div className="w-8 h-8 gradient-romantic rounded-full flex items-center justify-center shadow-md flex-shrink-0 mb-1">
                   <Bot className="w-4 h-4 text-white" />
                 </div>
               )}
               
-              <div
-                className={`max-w-[75%] p-4 rounded-2xl animate-fade-in ${
-                  message.isBot
-                    ? 'bg-background border border-romantic/20 text-foreground shadow-sm'
-                    : 'gradient-romantic text-white shadow-romantic ml-auto'
-                }`}
-              >
-                <p className="text-sm leading-relaxed">{message.text}</p>
-                <div className="text-xs opacity-70 mt-2">
+              <div className={`group relative max-w-[75%] ${message.isBot ? 'order-2' : 'order-1'}`}>
+                <div
+                  className={`px-4 py-3 rounded-3xl shadow-sm transition-all duration-200 hover:shadow-md ${
+                    message.isBot
+                      ? 'bg-background border border-border/50 text-foreground rounded-bl-md'
+                      : 'gradient-romantic text-white rounded-br-md shadow-romantic/25'
+                  }`}
+                >
+                  <p className="text-sm leading-relaxed whitespace-pre-wrap">{message.text}</p>
+                </div>
+                <div className={`text-xs text-muted-foreground/70 mt-1 px-1 ${
+                  message.isBot ? 'text-left' : 'text-right'
+                }`}>
                   {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                 </div>
               </div>
 
               {!message.isBot && (
-                <div className="w-8 h-8 bg-romantic/10 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-romantic/20 rounded-full flex items-center justify-center flex-shrink-0 mb-1 order-2">
                   <User className="w-4 h-4 text-romantic" />
                 </div>
               )}
@@ -275,25 +292,28 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onComplete }) => {
           ))}
           
           {isTyping && (
-            <div className="flex items-start gap-3">
-              <div className="w-8 h-8 gradient-romantic rounded-full flex items-center justify-center shadow-sm">
+            <div className="flex items-end gap-2 animate-fade-in">
+              <div className="w-8 h-8 gradient-romantic rounded-full flex items-center justify-center shadow-md">
                 <Bot className="w-4 h-4 text-white" />
               </div>
-              <div className="bg-background border border-romantic/20 p-4 rounded-2xl shadow-sm">
+              <div className="bg-background border border-border/50 px-4 py-3 rounded-3xl rounded-bl-md shadow-sm">
                 <div className="flex space-x-1">
                   <div className="w-2 h-2 bg-romantic rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-romantic rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-romantic rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-romantic rounded-full animate-bounce" style={{ animationDelay: '0.15s' }}></div>
+                  <div className="w-2 h-2 bg-romantic rounded-full animate-bounce" style={{ animationDelay: '0.3s' }}></div>
                 </div>
               </div>
             </div>
           )}
         </div>
+      </div>
         
-        <div className="p-6 border-t border-romantic/10 bg-background/50">
+      {/* Modern Input Area */}
+      <div className="sticky bottom-0 bg-background/80 backdrop-blur-xl border-t border-border/50 px-4 py-4">
+        <div className="max-w-4xl mx-auto">
           {renderInput()}
         </div>
-      </Card>
+      </div>
     </div>
   );
 };
