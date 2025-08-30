@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Instagram, Heart, Camera, Video } from 'lucide-react';
+import { Upload, Instagram, Heart, Camera, Video, Bot, User } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -225,39 +225,72 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onComplete }) => {
 
   return (
     <div className="min-h-screen gradient-soft flex items-center justify-center p-4">
-      <Card className="w-full max-w-2xl h-[80vh] flex flex-col shadow-soft">
-        <div className="flex-1 p-6 overflow-y-auto space-y-4">
+      <Card className="w-full max-w-2xl h-[80vh] flex flex-col shadow-soft backdrop-blur-sm bg-background/95 border-romantic/20">
+        {/* Header */}
+        <div className="flex items-center justify-center p-6 border-b border-romantic/10">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 gradient-romantic rounded-full flex items-center justify-center shadow-romantic">
+              <Heart className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <h2 className="text-xl font-semibold bg-gradient-to-r from-romantic to-romantic-variant bg-clip-text text-transparent">
+                LoveSync AI
+              </h2>
+              <p className="text-sm text-muted-foreground">Your AI Matchmaker</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex-1 p-6 overflow-y-auto space-y-6">
           {messages.map((message) => (
             <div
               key={message.id}
-              className={`flex ${message.isBot ? 'justify-start' : 'justify-end'}`}
+              className={`flex items-start gap-3 ${message.isBot ? 'justify-start' : 'justify-end'}`}
             >
+              {message.isBot && (
+                <div className="w-8 h-8 gradient-romantic rounded-full flex items-center justify-center shadow-sm flex-shrink-0">
+                  <Bot className="w-4 h-4 text-white" />
+                </div>
+              )}
+              
               <div
-                className={`max-w-[80%] p-3 rounded-lg ${
+                className={`max-w-[75%] p-4 rounded-2xl animate-fade-in ${
                   message.isBot
-                    ? 'bg-muted text-foreground'
-                    : 'gradient-romantic text-white shadow-romantic'
+                    ? 'bg-background border border-romantic/20 text-foreground shadow-sm'
+                    : 'gradient-romantic text-white shadow-romantic ml-auto'
                 }`}
               >
-                {message.text}
+                <p className="text-sm leading-relaxed">{message.text}</p>
+                <div className="text-xs opacity-70 mt-2">
+                  {message.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                </div>
               </div>
+
+              {!message.isBot && (
+                <div className="w-8 h-8 bg-romantic/10 rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-romantic" />
+                </div>
+              )}
             </div>
           ))}
           
           {isTyping && (
-            <div className="flex justify-start">
-              <div className="bg-muted p-3 rounded-lg">
+            <div className="flex items-start gap-3">
+              <div className="w-8 h-8 gradient-romantic rounded-full flex items-center justify-center shadow-sm">
+                <Bot className="w-4 h-4 text-white" />
+              </div>
+              <div className="bg-background border border-romantic/20 p-4 rounded-2xl shadow-sm">
                 <div className="flex space-x-1">
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce"></div>
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-                  <div className="w-2 h-2 bg-muted-foreground rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
+                  <div className="w-2 h-2 bg-romantic rounded-full animate-bounce"></div>
+                  <div className="w-2 h-2 bg-romantic rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
+                  <div className="w-2 h-2 bg-romantic rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
                 </div>
               </div>
             </div>
           )}
         </div>
         
-        <div className="p-6 border-t">
+        <div className="p-6 border-t border-romantic/10 bg-background/50">
           {renderInput()}
         </div>
       </Card>
