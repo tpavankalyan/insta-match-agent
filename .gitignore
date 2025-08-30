@@ -28,4 +28,5 @@ profiles
 web.instagram.com/
 downloaded_images_automated
 tpavankalyan
-
+.venv/
+backend/.venv/
