@@ -8,9 +8,11 @@ type AppStage = 'chat' | 'loading' | 'matching';
 const DatingApp: React.FC = () => {
   const [stage, setStage] = useState<AppStage>('chat');
   const [userResponses, setUserResponses] = useState<Record<string, any>>({});
+  const [userId, setUserId] = useState<string | null>(null);
 
   const handleChatComplete = (responses: Record<string, any>) => {
     setUserResponses(responses);
+    setUserId(responses.userId);
     setStage('loading');
     
     // Simulate backend processing time
@@ -23,9 +25,9 @@ const DatingApp: React.FC = () => {
     case 'chat':
       return <ChatInterface onComplete={handleChatComplete} />;
     case 'loading':
-      return <LoadingScreen />;
+      return <LoadingScreen userId={userId} />;
     case 'matching':
-      return <BubbleNetwork userResponses={userResponses} />;
+      return <BubbleNetwork userResponses={userResponses} userId={userId!} />;
     default:
       return <ChatInterface onComplete={handleChatComplete} />;
   }

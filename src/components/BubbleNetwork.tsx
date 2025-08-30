@@ -16,82 +16,62 @@ interface Profile {
 
 interface BubbleNetworkProps {
   userResponses: Record<string, any>;
+  userId: string;
 }
 
-const BubbleNetwork: React.FC<BubbleNetworkProps> = ({ userResponses }) => {
+const BubbleNetwork: React.FC<BubbleNetworkProps> = ({ userResponses, userId }) => {
   const [selectedChat, setSelectedChat] = useState<Profile | null>(null);
   const [connections, setConnections] = useState<string[]>([]);
   const [currentChatting, setCurrentChatting] = useState<string | null>(null);
   const [completedChats, setCompletedChats] = useState<string[]>([]);
   const [finalMatch, setFinalMatch] = useState<Profile | null>(null);
+  const [userProfile, setUserProfile] = useState<Profile | null>(null);
+  const [potentialMatches, setPotentialMatches] = useState<Profile[]>([]);
 
-  const userProfile: Profile = {
-    id: 'user',
-    name: userResponses.name || 'You',
-    age: userResponses.age || 25,
-    image: '👤',
-    interests: ['Travel', 'Food', 'Music'],
-    bio: userResponses.interests || 'Love life and adventure!',
-    isUser: true,
-  };
-
-  const potentialMatches: Profile[] = [
-    {
-      id: 'match1',
-      name: 'Emma',
-      age: 24,
-      image: '👩‍🦰',
-      interests: ['Photography', 'Yoga', 'Books'],
-      bio: 'Creative soul who loves capturing life\'s beautiful moments',
-    },
-    {
-      id: 'match2',
-      name: 'Sofia',
-      age: 26,
-      image: '👩‍🦱',
-      interests: ['Dancing', 'Cooking', 'Travel'],
-      bio: 'Passionate dancer and food enthusiast',
-    },
-    {
-      id: 'match3',
-      name: 'Zoe',
-      age: 23,
-      image: '👩',
-      interests: ['Music', 'Art', 'Hiking'],
-      bio: 'Artist by day, music lover by night',
-    },
-    {
-      id: 'match4',
-      name: 'Luna',
-      age: 27,
-      image: '👩‍🦳',
-      interests: ['Fitness', 'Science', 'Movies'],
-      bio: 'Fitness enthusiast and science nerd',
-    },
-  ];
-
-  // Auto-start chats after component mounts
   useEffect(() => {
-    const startChats = async () => {
-      for (const match of potentialMatches) {
-        await new Promise(resolve => setTimeout(resolve, 2000));
-        setCurrentChatting(match.id);
-        await new Promise(resolve => setTimeout(resolve, 3000));
-        setCompletedChats(prev => [...prev, match.id]);
-        setCurrentChatting(null);
+    const fetchData = async () => {
+      try {
+        const userRes = await fetch(`/persona/get-current-user-meta-data?user_id=${userId}`);
+        const userData = await userRes.json();
+        setUserProfile({ ...userData.user_meta_data, isUser: true });
+
+        const matchesRes = await fetch(`/persona/get-potential-matches?user_id=${userId}`);
+        const matchesData = await matchesRes.json();
+        setPotentialMatches(matchesData.potential_matches);
+      } catch (error) {
+        console.error("Error fetching data:", error);
       }
-      
-      // After all chats, determine the best match
-      setTimeout(() => {
-        const bestMatch = potentialMatches[1]; // Sofia
-        setFinalMatch(bestMatch);
-        setConnections([bestMatch.id]);
-      }, 1000);
     };
 
-    const timer = setTimeout(startChats, 1000);
-    return () => clearTimeout(timer);
-  }, []);
+    if (userId) {
+      fetchData();
+    }
+  }, [userId]);
+
+  // Auto-start chats after component mounts and data is loaded
+  useEffect(() => {
+    if (potentialMatches.length > 0) {
+      const startChats = async () => {
+        for (const match of potentialMatches) {
+          await new Promise(resolve => setTimeout(resolve, 2000));
+          setCurrentChatting(match.id);
+          await new Promise(resolve => setTimeout(resolve, 3000));
+          setCompletedChats(prev => [...prev, match.id]);
+          setCurrentChatting(null);
+        }
+        
+        // After all chats, determine the best match
+        setTimeout(() => {
+          const bestMatch = potentialMatches[1]; // Placeholder for matching logic
+          setFinalMatch(bestMatch);
+          setConnections([bestMatch.id]);
+        }, 1000);
+      };
+
+      const timer = setTimeout(startChats, 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [potentialMatches]);
 
   const getBubblePosition = (index: number, total: number) => {
     const angle = (index * 360) / total;
@@ -133,7 +113,7 @@ const BubbleNetwork: React.FC<BubbleNetworkProps> = ({ userResponses }) => {
               ? 'border-muted bg-muted/20'
               : 'border-border bg-card hover:border-romantic/50'
           }`}
-          onClick={() => !profile.isUser && setSelectedChat(profile)}
+          onClick={() => setSelectedChat(profile)} // <-- changed: allow clicking current user too
         >
           <div className="w-full h-full rounded-full flex items-center justify-center text-2xl">
             {profile.image}
@@ -206,7 +186,7 @@ const BubbleNetwork: React.FC<BubbleNetworkProps> = ({ userResponses }) => {
               {renderConnections()}
               
               {/* User profile in center */}
-              {renderProfile(userProfile)}
+              {userProfile && renderProfile(userProfile)}
               
               {/* Potential matches around the circle */}
               {potentialMatches.map((match, index) => renderProfile(match, index))}

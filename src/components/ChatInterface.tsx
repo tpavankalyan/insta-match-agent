@@ -1,9 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Upload, Instagram, Heart, Camera, Video } from 'lucide-react';
+import { Instagram } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -19,52 +18,80 @@ interface ChatInterfaceProps {
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ onComplete }) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentInput, setCurrentInput] = useState('');
-  const [currentStep, setCurrentStep] = useState(0);
-  const [responses, setResponses] = useState<Record<string, any>>({});
   const [isTyping, setIsTyping] = useState(false);
+  const [sessionsInitialized, setSessionsInitialized] = useState(false);
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
 
-  const steps = [
-    {
-      id: 'welcome',
-      botMessage: "Hi! Welcome to LoveSync AI 💕 I'm here to help you find your perfect match. Let's start by connecting your Instagram to get to know you better.",
-      type: 'instagram',
-    },
-    {
-      id: 'name',
-      botMessage: "Great! Now, what's your name?",
-      type: 'text',
-    },
-    {
-      id: 'age',
-      botMessage: "Nice to meet you! How old are you?",
-      type: 'number',
-    },
-    {
-      id: 'interests',
-      botMessage: "Tell me about your interests and hobbies. What do you love doing?",
-      type: 'textarea',
-    },
-    {
-      id: 'photos',
-      botMessage: "Let's add some photos to your profile! Upload your best pictures.",
-      type: 'upload',
-    },
-    {
-      id: 'lookingfor',
-      botMessage: "What are you looking for in a relationship?",
-      type: 'textarea',
-    },
-    {
-      id: 'complete',
-      botMessage: "Perfect! I have everything I need. Let me find your perfect matches...",
-      type: 'complete',
-    }
-  ];
+  const makeId = (prefix: string) =>
+    `${prefix}_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+
+  const dtwinUserId = useRef(makeId("dtwin_user"));
+  const dtwinSessionId = useRef(makeId("dtwin_sess"));
+  const chatCheckUserId = useRef(makeId("cc_user"));
+  const chatCheckSessionId = useRef(makeId("cc_sess"));
+
+  // Initialize sessions once when component mounts
+  useEffect(() => {
+    const initializeSessions = async () => {
+      try {
+        // Create dtwin session
+        await fetch(`/api/apps/dtwin/users/${dtwinUserId.current}/sessions/${dtwinSessionId.current}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: dtwinUserId.current,
+            session_id: dtwinSessionId.current,
+          }),
+        });
+
+        // Create chat_check session
+        await fetch(`/api/apps/chat_check/users/${chatCheckUserId.current}/sessions/${chatCheckSessionId.current}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: chatCheckUserId.current,
+            session_id: chatCheckSessionId.current,
+          }),
+        });
+
+        setSessionsInitialized(true);
+      } catch (error) {
+        console.error("Error initializing sessions:", error);
+        // Still set to true to prevent blocking the chat
+        setSessionsInitialized(true);
+      }
+    };
+
+    initializeSessions();
+  }, []);
 
   useEffect(() => {
-    // Add initial message
-    addBotMessage(steps[0].botMessage);
-  }, []);
+    // Add initial message after sessions are initialized
+    if (sessionsInitialized) {
+      addBotMessage("Hi! Welcome to LoveSync AI 💕 I'm here to help you find your perfect match. Let's start by connecting your Instagram to get to know you better.");
+    }
+  }, [sessionsInitialized]);
+
+  const handleInstagramConnect = async () => {
+    if (!username || !password) {
+      addBotMessage("Please enter your Instagram username and password.");
+      return;
+    }
+    addBotMessage("Connecting to Instagram...");
+    try {
+      const response = await fetch(`http://localhost:8002/instagram?username=${username}&password=${password}&user_id=${dtwinUserId.current}`);
+      const data = await response.json();
+      if (data.success) {
+        addBotMessage("Successfully connected to Instagram!");
+      } else {
+        addBotMessage(`Error connecting to Instagram: ${data.error}`);
+      }
+    } catch (error) {
+      console.error("Error connecting to Instagram:", error);
+      addBotMessage("Sorry, I'm having trouble connecting to Instagram. Please try again later.");
+    }
+  };
 
   const addBotMessage = (text: string) => {
     setIsTyping(true);
@@ -88,139 +115,138 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({ onComplete }) => {
     }]);
   };
 
-  const handleSubmit = (value: any) => {
-    const currentStepData = steps[currentStep];
-    
-    if (currentStepData.type === 'instagram') {
-      addUserMessage("Connected to Instagram ✓");
-      setResponses(prev => ({ ...prev, instagram: true }));
-    } else {
-      addUserMessage(typeof value === 'string' ? value : 'Uploaded files');
-      setResponses(prev => ({ ...prev, [currentStepData.id]: value }));
+  const handleSubmit = async (value: string) => {
+    // Don't allow submissions until sessions are initialized
+    if (!sessionsInitialized) {
+      return;
     }
 
-    const nextStep = currentStep + 1;
-    if (nextStep < steps.length) {
-      setCurrentStep(nextStep);
-      setTimeout(() => {
-        addBotMessage(steps[nextStep].botMessage);
-        if (steps[nextStep].type === 'complete') {
-          setTimeout(() => {
-            onComplete(responses);
-          }, 2000);
-        }
-      }, 1500);
-    }
-    
+    addUserMessage(value);
     setCurrentInput('');
+    setIsTyping(true);
+
+    try {
+      const ADK_AGENT_URL = "/api/run";
+
+      // Construct history
+      const history = messages.map(msg => ({
+        role: msg.isBot ? 'model' : 'user',
+        parts: [{ text: msg.text }],
+      }));
+
+      // Send to dtwin (sessions already exist)
+      const response = await fetch(ADK_AGENT_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          app_name: "dtwin",
+          user_id: dtwinUserId.current,
+          session_id: dtwinSessionId.current,
+          history,
+          new_message: { parts: [{ text: value }], role: "user" }
+        }),
+      });
+
+      const responseData = await response.json();
+      const agent_response = responseData[0]['content'];
+
+      if (agent_response && agent_response.parts?.length > 0) {
+        // Handle tool calls
+        for (const part of agent_response.parts) {
+          if (part.functionCall) {
+            addBotMessage(`Running tool: ${part.functionCall.name}...`);
+          }
+        }
+
+        // Last text part
+        const lastTextPart = [...agent_response.parts].reverse().find(p => p.text);
+        if (lastTextPart) {
+          const botReply = lastTextPart.text;
+          addBotMessage(botReply);
+
+          // Validate with chat_check (session already exists)
+          const chatCheckResponse = await fetch(ADK_AGENT_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              app_name: "chat_check",
+              user_id: chatCheckUserId.current,
+              session_id: chatCheckSessionId.current,
+              history: [],
+              new_message: { parts: [{ text: botReply }], role: "user" }
+            }),
+          });
+
+          const chatCheckData = await chatCheckResponse.json();
+          const check_response = chatCheckData[0]['content']['parts'][0]['text'];
+
+          if (check_response.includes("COMPLETE")) {
+            setTimeout(() => {
+              onComplete({ userId: dtwinUserId.current });
+            }, 2000);
+          }
+        }
+      } else {
+        addBotMessage("Sorry, I couldn't get a response.");
+      }
+    } catch (error) {
+      console.error("Error communicating with the bot:", error);
+      addBotMessage("Sorry, I'm having trouble connecting. Please try again later.");
+    } finally {
+      setIsTyping(false);
+    }
   };
 
   const renderInput = () => {
-    const currentStepData = steps[currentStep];
-    
-    if (!currentStepData || currentStepData.type === 'complete') return null;
-
-    switch (currentStepData.type) {
-      case 'instagram':
-        return (
-          <div className="flex gap-2">
-            <Button 
-              onClick={() => handleSubmit(true)} 
-              variant="default"
-              className="flex items-center gap-2 gradient-romantic text-white border-0 shadow-romantic"
-            >
-              <Instagram className="w-4 h-4" />
-              Connect Instagram
-            </Button>
-          </div>
-        );
-
-      case 'text':
-      case 'number':
-        return (
-          <div className="flex gap-2">
-            <Input
-              value={currentInput}
-              onChange={(e) => setCurrentInput(e.target.value)}
-              placeholder="Type your answer..."
-              type={currentStepData.type === 'number' ? 'number' : 'text'}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && currentInput.trim()) {
-                  handleSubmit(currentInput.trim());
-                }
-              }}
-              className="border-romantic/20 focus:ring-romantic"
-            />
-            <Button 
-              onClick={() => currentInput.trim() && handleSubmit(currentInput.trim())}
-              disabled={!currentInput.trim()}
-              variant="default"
-              className="gradient-romantic text-white border-0"
-            >
-              Send
-            </Button>
-          </div>
-        );
-
-      case 'textarea':
-        return (
-          <div className="space-y-2">
-            <Textarea
-              value={currentInput}
-              onChange={(e) => setCurrentInput(e.target.value)}
-              placeholder="Tell me more..."
-              className="border-romantic/20 focus:ring-romantic"
-              rows={3}
-            />
-            <Button 
-              onClick={() => currentInput.trim() && handleSubmit(currentInput.trim())}
-              disabled={!currentInput.trim()}
-              variant="default"
-              className="gradient-romantic text-white border-0"
-            >
-              Send
-            </Button>
-          </div>
-        );
-
-      case 'upload':
-        return (
-          <div className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <Button 
-                variant="outline"
-                className="flex items-center gap-2 h-20 border-romantic/30 text-romantic hover:bg-romantic/10"
-              >
-                <Camera className="w-5 h-5" />
-                <div className="text-center">
-                  <div className="font-medium">Photos</div>
-                  <div className="text-xs text-muted-foreground">Upload images</div>
-                </div>
-              </Button>
-              <Button 
-                variant="outline"
-                className="flex items-center gap-2 h-20 border-romantic/30 text-romantic hover:bg-romantic/10"
-              >
-                <Video className="w-5 h-5" />
-                <div className="text-center">
-                  <div className="font-medium">Videos</div>
-                  <div className="text-xs text-muted-foreground">Upload videos</div>
-                </div>
-              </Button>
-            </div>
-            <Button 
-              onClick={() => handleSubmit(['photo1.jpg', 'photo2.jpg'])}
-              variant="default"
-              className="w-full gradient-romantic text-white border-0"
-            >
-              Continue with Sample Photos
-            </Button>
-          </div>
-        );
-
-      default:
-        return null;
-    }
+    return (
+      <div>
+        <div className="flex gap-2 mb-2">
+          <Input
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            placeholder="Instagram Username"
+            className="border-romantic/20 focus:ring-romantic"
+          />
+          <Input
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Instagram Password"
+            type="password"
+            className="border-romantic/20 focus:ring-romantic"
+          />
+          <Button
+            onClick={handleInstagramConnect}
+            variant="default"
+            className="bg-pink-500 text-white border-0"
+          >
+            <Instagram className="w-4 h-4 mr-2" />
+            Connect
+          </Button>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            value={currentInput}
+            onChange={(e) => setCurrentInput(e.target.value)}
+            placeholder={sessionsInitialized ? "Type your message..." : "Initializing..."}
+            disabled={!sessionsInitialized}
+            onKeyPress={(e) => {
+              if (e.key === 'Enter' && currentInput.trim() && sessionsInitialized) {
+                handleSubmit(currentInput.trim());
+              }
+            }}
+            className="border-romantic/20 focus:ring-romantic"
+          />
+          <Button
+            onClick={() => currentInput.trim() && handleSubmit(currentInput.trim())}
+            disabled={!currentInput.trim() || !sessionsInitialized}
+            variant="default"
+            className="gradient-romantic text-white border-0"
+          >
+            Send
+          </Button>
+        </div>
+      </div>
+    );
   };
 
   return (
