@@ -8,33 +8,47 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    --background: 0 0% 99%;
+    --foreground: 240 10% 3.9%;
 
     --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card-foreground: 240 10% 3.9%;
 
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover-foreground: 240 10% 3.9%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 346 77% 49.8%;
+    --primary-foreground: 355.7 100% 97.3%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
 
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 346 77% 49.8%;
+
+    --success: 142 76% 36%;
+    --success-foreground: 138 76% 97%;
+
+    --romantic: 322 81% 57%;
+    --romantic-foreground: 210 40% 98%;
+
+    --gradient-romantic: linear-gradient(135deg, hsl(346 77% 49.8%), hsl(322 81% 57%));
+    --gradient-soft: linear-gradient(180deg, hsl(0 0% 99%), hsl(240 4.8% 95.9%));
+    --gradient-success: linear-gradient(135deg, hsl(142 76% 36%), hsl(160 84% 39%));
+
+    --shadow-romantic: 0 10px 30px -10px hsl(346 77% 49.8% / 0.3);
+    --shadow-soft: 0 4px 20px -4px hsl(240 10% 3.9% / 0.1);
+    --shadow-glow: 0 0 40px hsl(346 77% 49.8% / 0.4);
 
     --radius: 0.5rem;
 
@@ -101,5 +115,95 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+@layer components {
+  .bubble-pulse {
+    @apply animate-pulse;
+    animation: bubble-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .bubble-float {
+    animation: bubble-float 3s ease-in-out infinite;
+  }
+
+  .chat-slide-in {
+    animation: slide-in-right 0.3s ease-out;
+  }
+
+  .gradient-romantic {
+    background: var(--gradient-romantic);
+  }
+
+  .gradient-soft {
+    background: var(--gradient-soft);
+  }
+
+  .gradient-success {
+    background: var(--gradient-success);
+  }
+
+  .shadow-romantic {
+    box-shadow: var(--shadow-romantic);
+  }
+
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+
+  .shadow-glow {
+    box-shadow: var(--shadow-glow);
+  }
+}
+
+@keyframes bubble-pulse {
+  0%, 100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.9;
+  }
+}
+
+@keyframes bubble-float {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes slide-in-right {
+  0% {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes fade-in {
+  0% {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes connection-draw {
+  0% {
+    stroke-dasharray: 0 100;
+  }
+  100% {
+    stroke-dasharray: 100 0;
   }
 }
