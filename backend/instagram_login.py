@@ -46,9 +46,9 @@ async def main():
     username_field = input_fields[0]
     await username_field.fill("tpavan.kalyan")
 
-    # fill "pavanPRITHVI@1" in input field password
+    # fill "" in input field password
     password_field = input_fields[1]
-    await password_field.fill("pavanPRITHVI@1")
+    await password_field.fill("")
 
     #click on button with type "submit"
     submit_button = await page.query_selector("button[type='submit']")
