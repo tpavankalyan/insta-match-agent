@@ -20,6 +20,11 @@ export default defineConfig(({ mode }) => ({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/persona/, ""),
       },
+      "/agents": {
+        target: "http://localhost:8005",
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/agents/, ""),
+      },
     },
   },
   plugins: [

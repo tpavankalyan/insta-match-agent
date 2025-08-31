@@ -4,9 +4,10 @@ import base64
 import json
 from openai import AzureOpenAI
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 import subprocess
 from glob import glob
+import os
 
 app = FastAPI()
 
@@ -52,3 +53,49 @@ def get_potential_matches(user_id: str):
             res["id"] = matches_path.split("/")[-2]
             potential_matches.append(res)
     return {"potential_matches": potential_matches}
+
+@app.post("/create-and-launch-agents")
+async def create_and_launch_agents():
+    try:
+        # Get the absolute path of the project's root directory
+        project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", ".."))
+
+        # Step 1: Create the agents by running the script
+        create_agents_script_path = "/Users/tpavankalyan/Documents/Cline/insta-match-agent/backend/create_agents.py"
+        python_executable = "/Users/tpavankalyan/Documents/Cline/insta-match-agent/backend/.venv/bin/python"
+
+        result = subprocess.run(
+            [python_executable, create_agents_script_path],
+            capture_output=True,
+            text=True,
+            check=True
+        )
+        
+        # Step 2: Launch the agents using 'adk web'
+        agents_dir = "/Users/tpavankalyan/Documents/Cline/insta-match-agent/agents"
+        adk_executable = "/Users/tpavankalyan/Documents/Cline/insta-match-agent/agents/.venv/bin/adk"
+
+        # Ensure the directory exists
+        if not os.path.isdir(agents_dir):
+            raise HTTPException(status_code=500, detail="Agents directory not found.")
+
+        # The command to run
+        command = [adk_executable, "web", "--port", "8009"]
+        
+        # Run the command in the specified directory
+        process = subprocess.Popen(
+            command,
+            cwd=agents_dir,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True
+        )
+
+        # For now, we'll just confirm it started. In a real-world scenario,
+        # you might want to manage this process more carefully.
+        return {"message": "Agents created and launch process started successfully.", "details": result.stdout}
+
+    except subprocess.CalledProcessError as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create agents: {e.stderr}")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
