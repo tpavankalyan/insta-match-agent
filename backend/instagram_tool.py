@@ -59,7 +59,6 @@ async def main(username, password, user_id):
         username_field = input_fields[0]
         await username_field.fill(username)
 
-        # fill "pavanPRITHVI@1" in input field password
         password_field = input_fields[1]
         await password_field.fill(password)
 
